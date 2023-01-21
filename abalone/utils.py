@@ -21,6 +21,7 @@
 from typing import List, Tuple, Union
 
 from abalone.enums import Direction, Space
+import numpy as np
 
 
 def line_from_to(from_space: Space, to_space: Space) -> Union[Tuple[List[Space], Direction], Tuple[None, None]]:
@@ -168,3 +169,29 @@ def neighbor(space: Space, direction: Direction) -> Space:
         return Space.OFF
 
     return Space[xs[xi] + ys[yi]]
+
+
+def distance_from_center(space: Space):
+    chars = space.name
+    return abs(ord(chars[0]) - ord('E')) + abs(ord(chars[1]) - ord('5'))
+
+
+def center_of_gravity(spaces: List[Space]):
+    center_x = []
+    center_y = []
+    
+    for space in spaces:
+        v = space.value
+        x = ord(v[0])
+        y = ord(v[1])
+        center_x.append(x)
+        center_y.append(y)
+
+    center_x = np.asarray(center_x)
+    center_y = np.asarray(center_y)
+
+    center_x = np.average(center_x)
+    center_y = np.average(center_y)
+
+    return center_x, center_y
+        

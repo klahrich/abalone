@@ -53,6 +53,11 @@ def _space_to_board_indices(space: Space) -> Tuple[int, int]:
     return x, y
 
 
+def _space_to_marble(space: Space, board) -> Marble:
+    x,y = _space_to_board_indices(space)
+    return board[x][y]
+
+
 def _marble_of_player(player: Player) -> Marble:
     """Returns the corresponding `abalone.enums.Marble` for a given `abalone.enums.Player`.
 
@@ -99,6 +104,10 @@ class Game:
 
         return Player.BLACK if self.turn is Player.WHITE else Player.WHITE
 
+    def is_player_turn(self, marble: Marble) -> bool:
+        return ((marble is Marble.BLACK and self.turn is Player.BLACK) or 
+                (marble is Marble.WHITE and self.turn is Player.WHITE))
+
     def switch_player(self) -> None:
         """Switches the player whose turn it is."""
         self.turn = self.not_in_turn_player()
@@ -139,6 +148,19 @@ class Game:
         x, y = _space_to_board_indices(space)
 
         return self.board[x][y]
+
+    def count_friendly_neighbors(self, space: Space) -> int:
+        count = 0
+        marble = self.get_marble(space)
+        for d in Direction:
+            neighbor_space = neighbor(space, d)
+            try:
+                neighbor_marble = self.get_marble(neighbor_space)
+                if (neighbor_marble is not Marble.BLANK) and (neighbor_marble is marble):
+                    count += 1
+            except:
+                continue
+        return count
 
     def get_score(self) -> Tuple[int, int]:
         """Counts how many marbles the players still have on the board.
@@ -311,7 +333,7 @@ class Game:
                     copy.move(marbles, direction)
                 except IllegalMoveException:
                     continue
-                yield marbles, direction
+                yield marbles, direction, copy
 
 
 class IllegalMoveException(Exception):
