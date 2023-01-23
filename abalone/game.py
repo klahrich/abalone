@@ -25,7 +25,11 @@ import colorama
 from colorama import Style
 
 from abalone.enums import Direction, InitialPosition, Marble, Player, Space
-from abalone.utils import line_from_to, line_to_edge, neighbor
+from abalone.utils import get_winner, line_from_to, line_to_edge, neighbor
+
+#from easyAI import TwoPlayerGame, AI_Player, Negamax
+from mcts.base.base import BaseState, BaseAction
+from time import time
 
 colorama.init(autoreset=True)
 
@@ -71,12 +75,14 @@ def _marble_of_player(player: Player) -> Marble:
     return Marble.WHITE if player is Player.WHITE else Marble.BLACK
 
 
-class Game:
+class Game(BaseState):
     """Represents the mutable state of an Abalone game."""
 
     def __init__(self, initial_position: InitialPosition = InitialPosition.DEFAULT, first_turn: Player = Player.BLACK):
         self.board = deepcopy(initial_position.value)
         self.turn = first_turn
+        self.score = (14, 14)
+        self.update_legal_moves = True
 
     def __str__(self) -> str:  # pragma: no cover
         board_lines = list(map(lambda line: ' '.join(map(str, line)), self.board))
@@ -300,6 +306,7 @@ class Game:
             # This exception should only be raised if the arguments are not passed according to the type hints. It is
             # only there to prevent a silent failure in such a case.
             raise Exception('Invalid arguments')
+        self.update_legal_moves = True
 
     def generate_own_marble_lines(self) -> Generator[Union[Space, Tuple[Space, Space]], None, None]:
         """Generates all adjacent straight lines with up to three marbles of the player whose turn it is.
@@ -319,7 +326,7 @@ class Game:
                     if neighbor2 is not Space.OFF and self.get_marble(neighbor2) is _marble_of_player(self.turn):
                         yield space, neighbor2
 
-    def generate_legal_moves(self) -> Generator[Tuple[Union[Space, Tuple[Space, Space]], Direction], None, None]:
+    def generate_legal_moves(self):
         """Generates all possible moves that the player whose turn it is can perform. The yielded values are intended\
         to be passed as arguments to `abalone.game.Game.move`.
 
@@ -334,6 +341,56 @@ class Game:
                 except IllegalMoveException:
                     continue
                 yield marbles, direction, copy
+
+    def get_current_player(self) -> int:
+        return 1 if self.turn is Player.BLACK else -1
+
+    def get_possible_actions(self):
+        #print(self)
+        #t = time()
+        actions =  [Action(m, d, g) for m,d,g in self.generate_legal_moves()]
+        print(f'Len(action): {len(actions)}')
+        #print('Time elapsed: ' + str(time() - t))
+        return actions
+
+    def take_action(self, action):
+        action.game.switch_player()
+        return action.game
+
+    def is_terminal(self):
+        score = self.get_score()
+        #winner = get_winner(score)
+        #return winner is not None
+        return abs(score[0] - score[1]) >= 2
+
+    def get_reward(self):
+        score = self.get_score()
+        return score[0] - score[1]
+
+
+class Action(BaseAction):
+    def __init__(self, marbles, direction, game:Game):
+        self.marbles = marbles
+        self.direction = direction
+        self.game = game
+        if isinstance(self.marbles, tuple):
+            self.move_type = 'broadside'
+        elif isinstance(self.marbles, Space):
+            self.move_type = 'inline'
+        else:
+            raise IllegalMoveException()
+
+    def __str__(self):
+        return str((self.marbles, self.direction))
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.marbles == other.marbles and self.direction == other.direction
+
+    def __hash__(self):
+        return hash((self.marbles, self.direction))
 
 
 class IllegalMoveException(Exception):

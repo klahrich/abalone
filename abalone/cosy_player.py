@@ -28,18 +28,17 @@ from abalone.utils import distance_from_center, center_of_gravity
 
 class CosyPlayer(AbstractPlayer):
 
-    def __init__(self, anti_marbles_weight=5, distance_center_weight=1, anti_distance_center_weight=1,
-                total_neighbors_weight=1, total_anti_neighbors_weight=1, distance_to_enemy_weight=1):
+    def __init__(self, config):
         super().__init__()
-        self.anti_marbles_weight = anti_marbles_weight
-        self.distance_center_weight = distance_center_weight
-        self.anti_distance_center_weight = anti_distance_center_weight
-        self.total_neighbors_weight = total_neighbors_weight
-        self.total_anti_neighbors_weight = total_anti_neighbors_weight
-        self.distance_to_enemy_weight = distance_to_enemy_weight
+        self.anti_marbles_weight = config['anti_marbles_weight']
+        self.distance_center_weight = config['distance_center_weight']
+        self.anti_distance_center_weight = config['anti_distance_center_weight']
+        self.total_neighbors_weight = config['total_neighbors_weight']
+        self.total_anti_neighbors_weight = config['total_anti_neighbors_weight']
+        self.distance_to_enemy_weight = config['distance_to_enemy_weight']
 
 
-    def turn(self, game: Game) \
+    def turn(self, game: Game, game_history=None) \
             -> Tuple[Union[Space, Tuple[Space, Space]], Direction]:
 
         possible_moves = list(game.generate_legal_moves())
@@ -97,11 +96,11 @@ class CosyPlayer(AbstractPlayer):
                 best_anti_distance_center = anti_distance_center
                 best_distance_to_enemy = distance_to_enemy
 
-        print(f'best_total_neighbors: {best_total_neighbors}', 
-              f'best_total_anti_neighbors: {best_total_anti_neighbors}', 
-              f'best_total_anti_marbles: {best_total_anti_marbles}', 
-              f'best_distance_center: {best_distance_center}', 
-              f'best_anti_distance_center: {best_anti_distance_center}',
-              f'distance_to_enemy: {distance_to_enemy}')
+        # print(f'best_total_neighbors: {best_total_neighbors}', 
+        #       f'best_total_anti_neighbors: {best_total_anti_neighbors}', 
+        #       f'best_total_anti_marbles: {best_total_anti_marbles}', 
+        #       f'best_distance_center: {best_distance_center}', 
+        #       f'best_anti_distance_center: {best_anti_distance_center}',
+        #       f'distance_to_enemy: {distance_to_enemy}')
 
         return best_marbles, best_direction

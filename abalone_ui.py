@@ -1,11 +1,12 @@
 import arcade
 from abalone.enums import X_A1, Y_A1, SIZE, Space, InitialPosition, Marble, Player
-from abalone.game import Game, _marble_of_player, _space_to_marble
+from abalone.game import Game, _marble_of_player, _space_to_marble, Action
 from typing import List
 from abalone.sprites import SpaceSprite, MarbleSprite, ArrowSprite
-from abalone.run_game import _get_winner
+from abalone.utils import get_winner
 from abalone.cosy_player import CosyPlayer
 import time
+from mcts.searcher.mcts import MCTS
 
 
 class AbaloneUI(arcade.Window):
@@ -26,12 +27,16 @@ class AbaloneUI(arcade.Window):
         self.game = game
         self.clicked_marble_sprites = set()
         self.move_marbles = False
-        self.player_ai = CosyPlayer(anti_marbles_weight=1.5, 
-                                    distance_center_weight=1,
-                                    anti_distance_center_weight=1,
-                                    total_neighbors_weight=0.2,
-                                    total_anti_neighbors_weight=0.3,
-                                    distance_to_enemy_weight=0.3)
+        config = {
+            'anti_marbles_weight': 8.63, 
+            'distance_center_weight': 6.75,
+            'anti_distance_center_weight': 1.48,
+            'total_neighbors_weight': 0.56,
+            'total_anti_neighbors_weight': 8.95,
+            'distance_to_enemy_weight': 2.86
+        }
+        #self.player_ai = CosyPlayer(config)
+        self.player_ai = MCTS(time_limit=1000)
         self.player_ai_turn = Player.BLACK
         self.space_to_sprite = dict()
         self.bell_sound = arcade.load_sound("sounds/bell.wav")
@@ -63,7 +68,11 @@ class AbaloneUI(arcade.Window):
             arcade.schedule(self.move_ai, 1)
 
     def move_ai(self, dt=0):
-        move = self.player_ai.turn(self.game)
+        #move = self.player_ai.turn(self.game)
+        action, reward = self.player_ai.search(initial_state=self.game, need_details=True)
+        print(action)
+        print(reward)
+        move = (action.marbles, action.direction)
         self.game.move(*move)
         space, direction = move
         if isinstance(space, Space):
@@ -101,8 +110,8 @@ class AbaloneUI(arcade.Window):
             self.move_marbles = False
             self.clicked_marble_sprites = set()
             self.score = self.game.get_score()
-            print('score:', self.score)
-            self.winner = _get_winner(self.score)
+            #print('score:', self.score)
+            self.winner = get_winner(self.score)
             if self.winner is not None:
                 print(f'{self.winner.name} won!')
                 arcade.play_sound(self.bell_long_sound)

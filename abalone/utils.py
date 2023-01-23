@@ -20,7 +20,7 @@
 
 from typing import List, Tuple, Union
 
-from abalone.enums import Direction, Space
+from abalone.enums import Direction, Space, Player
 import numpy as np
 
 
@@ -195,3 +195,16 @@ def center_of_gravity(spaces: List[Space]):
 
     return center_x, center_y
         
+
+def get_winner(score: Tuple[int, int]) -> Union[Player, None]:
+    """Returns the winner of the game based on the current score.
+
+    Args:
+        score: The score tuple returned by `abalone.game.Game.get_score`
+
+    Returns:
+        Either the `abalone.enums.Player` who won the game or `None` if no one has won yet.
+    """
+    if 8 in score:
+        return Player.WHITE if score[0] == 8 else Player.BLACK
+    return None
