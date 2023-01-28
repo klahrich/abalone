@@ -2,8 +2,7 @@ from arcade import SpriteCircle
 from abalone.enums import Direction, Space
 import arcade
 from abalone.enums import SIZE, Marble
-from abalone.game import _space_to_marble, _marble_of_player
-from abalone.utils import line_from_to
+from abalone.utils import line_from_to, space_to_marble, marble_of_player
 
 
 class SpaceSprite(SpriteCircle):
@@ -16,7 +15,7 @@ class SpaceSprite(SpriteCircle):
         self.marble_sprite = None
         
     def get_marble(self):
-        return _space_to_marble(self.space, self.abalone_ui.game.board)
+        return space_to_marble(self.space, self.abalone_ui.game.board)
 
     def get_marble_sprite(self):
         return self.marble_sprite
@@ -38,20 +37,22 @@ class SpaceSprite(SpriteCircle):
             m = clicked_marble_sprites[0]
             spaces, direction = line_from_to(m.space_sprite.space, self.space)
             if direction is not None:
-                self.abalone_ui.game.move(m.space_sprite.space, direction)
-                self.abalone_ui.game.switch_player()
+                #self.abalone_ui.game.move(m.space_sprite.space, direction)
+                #self.abalone_ui.game.switch_player()
+                self.abalone_ui.game.play_move((m.space_sprite.space, direction))
                 self.abalone_ui.move_marbles = True
-                arcade.schedule(self.abalone_ui.move_ai, 1)
+                
         elif len(clicked_marble_sprites)==2:
             m1, m2 = (clicked_marble_sprites[0], clicked_marble_sprites[1])
             spaces, direction = line_from_to(m1.space_sprite.space, self.space)
             if direction is None:
                 spaces, direction = line_from_to(m2.space_sprite.space, self.space)
             if direction is not None:
-                self.abalone_ui.game.move((m1.space_sprite.space, m2.space_sprite.space), direction)
-                self.abalone_ui.game.switch_player()
+                # self.abalone_ui.game.move((m1.space_sprite.space, m2.space_sprite.space), direction)
+                # self.abalone_ui.game.switch_player()
+                self.abalone_ui.game.play_move(((m1.space_sprite.space, m2.space_sprite.space), direction))
                 self.abalone_ui.move_marbles = True
-                arcade.schedule(self.abalone_ui.move_ai, 1)
+        
 
 class MarbleSprite(SpriteCircle):
 
@@ -69,7 +70,7 @@ class MarbleSprite(SpriteCircle):
         self.set_position(space_sprite.position[0], space_sprite.position[1])
 
     def click(self):
-        if self.marble is _marble_of_player(self.abalone_ui.game.turn):
+        if self.marble is marble_of_player(self.abalone_ui.game.turn):
             self.is_clicked = not self.is_clicked
             if self.is_clicked:
                 self.alpha = 150
@@ -97,7 +98,3 @@ class ArrowSprite(arcade.Sprite):
                 super().__init__('img/arrow_right.png')
             case Direction.WEST:
                 super().__init__('img/arrow_left.png')
-            case Direction.NORTH:
-                super().__init__('img/arrow_up.png')
-            case Direction.SOUTH:
-                super().__init__('img/arrow_down.png')

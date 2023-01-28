@@ -18,14 +18,11 @@
 
 """This module is an example implementation for a player that performs random moves."""
 from random import choice
-from typing import List, Tuple, Union
-
-from abalone.abstract_player import AbstractPlayer
-from abalone.enums import Space, Direction
 from abalone.game import Game
 
 
-class RandomPlayer(AbstractPlayer):
-    def turn(self, game: Game, moves_history: List[Tuple[Union[Space, Tuple[Space, Space]], Direction]]) \
-            -> Tuple[Union[Space, Tuple[Space, Space]], Direction]:
-        return choice(list(game.generate_legal_moves()))
+class RandomPlayer:
+    
+    def __call__(self, game: Game):
+        moves = list(game.generate_legal_moves())
+        return choice(moves)

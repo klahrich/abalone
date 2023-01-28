@@ -20,8 +20,77 @@
 
 from typing import List, Tuple, Union
 
-from abalone.enums import Direction, Space
+from abalone.enums import Direction, Space, Player, Marble
 import numpy as np
+import pickle
+
+
+
+
+class Utils:
+
+    with open('neighbors.pkl', 'rb') as f:
+        neighbors_table = pickle.load(f)
+
+    @classmethod
+    def neighbor(cls, space:Space, direction:Direction) -> Space:
+        return Utils.neighbors_table[space.name + direction.name]
+
+
+
+def space_to_board_indices(space: Space) -> Tuple[int, int]:
+    """Returns the corresponding index for `self.board` of a given `abalone.enums.Space`.
+
+    Args:
+        space: The `abalone.enums.Space` for which the indices are wanted.
+
+    Returns:
+        An int tuple containing two indices for `self.board`.
+    """
+
+    xs = ['I', 'H', 'G', 'F', 'E', 'D', 'C', 'B', 'A']
+    ys = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    x = xs.index(space.value[0])
+    y = ys.index(space.value[1])
+
+    # offset because lines 'F' to 'I' don't start with '1'
+    if x <= 3:
+        y -= 4 - x
+
+    return x, y
+
+
+def space_to_marble(space: Space, board) -> Marble:
+    x,y = space_to_board_indices(space)
+    return board[x][y]
+
+
+def marble_of_player(player: Player) -> Marble:
+    """Returns the corresponding `abalone.enums.Marble` for a given `abalone.enums.Player`.
+
+    Args:
+        player: The `abalone.enums.Player` whose `abalone.enums.Marble` is wanted.
+
+    Returns:
+        The `abalone.enums.Marble` which belongs to `player`.
+    """
+
+    return Marble.WHITE if player is Player.WHITE else Marble.BLACK
+
+
+def get_winner(score: Tuple[int, int]) -> Union[Player, None]:
+    """Returns the winner of the game based on the current score.
+
+    Args:
+        score: The score tuple returned by `abalone.game.Game.get_score`
+
+    Returns:
+        Either the `abalone.enums.Player` who won the game or `None` if no one has won yet.
+    """
+    if 8 in score:
+        return Player.WHITE if score[0] == 8 else Player.BLACK
+    return None
 
 
 def line_from_to(from_space: Space, to_space: Space) -> Union[Tuple[List[Space], Direction], Tuple[None, None]]:
@@ -63,7 +132,7 @@ def line_from_to(from_space: Space, to_space: Space) -> Union[Tuple[List[Space],
     for direction in Direction:
         line = [from_space]
         while line[-1] is not Space.OFF:
-            next_space = neighbor(line[-1], direction)
+            next_space = Utils.neighbor(line[-1], direction)
             line.append(next_space)
             if next_space is to_space:
                 return line, direction
@@ -106,12 +175,12 @@ def line_to_edge(from_space: Space, direction: Direction) -> List[Space]:
         raise Exception('`from_space` must not be `Space.OFF`')
     line = [from_space]
     while line[-1] is not Space.OFF:
-        line.append(neighbor(line[-1], direction))
+        line.append(Utils.neighbor(line[-1], direction))
     line.pop()  # remove Space.OFF
     return line
 
 
-def neighbor(space: Space, direction: Direction) -> Space:
+def _neighbor(space: Space, direction: Direction) -> Space:
     """Returns the neighboring `abalone.enums.Space` of a given space in a given `abalone.enums.Direction`.
 
     Example:
@@ -170,10 +239,36 @@ def neighbor(space: Space, direction: Direction) -> Space:
 
     return Space[xs[xi] + ys[yi]]
 
+def distance(space1: Space, space2: Space):
+    chars1 = space1.name
+    chars2 = space2.name
+
+    ords1 = (ord(chars1[0]), ord(chars1[1]))
+    ords2 = (ord(chars2[0]), ord(chars2[1]))
+
+    if ords1[0]==ords2[0]:
+        return abs(ords1[1] - ords2[1])
+
+    if ords1[1]==ords2[1]:
+        return abs(ords1[0] - ords2[0])
+
+    if (ords1[0] - ords2[0])==(ords1[1] - ords2[1]):
+        return abs(ords1[0] - ords2[0])
+
+    top, bottom = (chars1, chars2) if ords1[0] > ords2[0] else (chars2, chars1)
+    ords_top = (ord(top[0]), ord(top[1]))
+    ords_bottom = (ord(bottom[0]), ord(bottom[1]))
+
+    if top[1] < bottom[1]:
+        space_tmp = Space[top[0] + bottom[1]]
+    else:
+        space_tmp = Space[top[0] + str(int(bottom[1]) + ords_top[0]-ords_bottom[0])]
+        
+    return distance(space1, space_tmp) + distance(space_tmp, space2)
+
 
 def distance_from_center(space: Space):
-    chars = space.name
-    return abs(ord(chars[0]) - ord('E')) + abs(ord(chars[1]) - ord('5'))
+    return distance(space, Space.E5)
 
 
 def center_of_gravity(spaces: List[Space]):
@@ -194,4 +289,6 @@ def center_of_gravity(spaces: List[Space]):
     center_y = np.average(center_y)
 
     return center_x, center_y
+    
         
+

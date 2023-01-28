@@ -25,21 +25,7 @@ from typing import Generator, List, Tuple, Union
 from abalone.abstract_player import AbstractPlayer
 from abalone.enums import Direction, Player, Space
 from abalone.game import Game, IllegalMoveException
-from abalone.utils import line_from_to
-
-
-def _get_winner(score: Tuple[int, int]) -> Union[Player, None]:
-    """Returns the winner of the game based on the current score.
-
-    Args:
-        score: The score tuple returned by `abalone.game.Game.get_score`
-
-    Returns:
-        Either the `abalone.enums.Player` who won the game or `None` if no one has won yet.
-    """
-    if 8 in score:
-        return Player.WHITE if score[0] == 8 else Player.BLACK
-    return None
+from abalone.utils import line_from_to, get_winner
 
 
 def _format_move(turn: Player, move: Tuple[Union[Space, Tuple[Space, Space]], Direction], moves: int) -> str:
@@ -77,7 +63,7 @@ def run_game(black: AbstractPlayer, white: AbstractPlayer, **kwargs) \
         score_str = f'BLACK {score[0]} - WHITE {score[1]}'
         print(score_str, game, '', sep='\n')
 
-        winner = _get_winner(score)
+        winner = get_winner(score)
         if winner is not None:
             print(f'{winner.name} won!')
             break
